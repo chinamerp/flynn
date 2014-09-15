@@ -1,11 +1,16 @@
 package main
 
 import (
-	"io"
+	"bufio"
+	"fmt"
 	"net/http"
+	"sync"
+	"time"
 
 	"github.com/flynn/flynn/Godeps/_workspace/src/github.com/go-martini/martini"
 	ct "github.com/flynn/flynn/controller/types"
+	"github.com/flynn/flynn/discoverd/client"
+	"github.com/flynn/flynn/pkg/sse"
 	routerc "github.com/flynn/flynn/router/client"
 	"github.com/flynn/flynn/router/types"
 )
@@ -75,18 +80,41 @@ func pauseService(router routerc.Client, pauseReq router.PauseReq, params martin
 }
 
 func streamServiceDrain(req *http.Request, params martini.Params, router routerc.Client, r ResponseHelper, w http.ResponseWriter) {
-	stream, err := router.StreamServiceDrain(params["service_type"], params["service_name"])
-	defer stream.Close()
-	if err != nil {
-		r.Error(err)
-		return
-	}
 	w.Header().Set("Content-Type", "text/event-stream; charset=utf-8")
 	w.WriteHeader(200)
 	if wf, ok := w.(http.Flusher); ok {
 		wf.Flush()
 	}
-	if _, err := io.Copy(w, stream); err != nil {
+	services, err := discoverd.Services("router", time.Second)
+	if err != nil {
 		r.Error(err)
+		return
 	}
+	var wg sync.WaitGroup
+	wg.Add(len(services))
+	for _, service := range services {
+		go func() {
+			routerc.NewWithAddr(service.Addr)
+			stream, err := router.StreamServiceDrain(params["service_type"], params["service_name"])
+			defer stream.Close()
+			if err != nil {
+				r.Error(err)
+				return
+			}
+			dec := &sse.Reader{bufio.NewReader(stream)}
+			for {
+				line, err := dec.Read()
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+				if string(line) == "all" {
+					wg.Done()
+					break
+				}
+			}
+		}()
+	}
+	wg.Wait()
+	// write "all" to client
 }

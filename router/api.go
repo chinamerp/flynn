@@ -29,7 +29,7 @@ func apiHandler(rtr *Router) http.Handler {
 	r.Get("/routes", getRoutes)
 	r.Get("/routes/:route_type/:route_id", getRoute)
 	r.Delete("/routes/:route_type/:route_id", deleteRoute)
-	r.Put("/services/:service_type/:service_name", binding.Bind(router.PauseReq{}), pauseService)
+	r.Put("/services/:service_type/:service_name", binding.Json(router.PauseReq{}), pauseService)
 	r.Get("/services/:service_type/:service_name/drain", streamServiceDrain)
 	return m
 }

@@ -209,7 +209,7 @@ func (h *tcpSyncHandler) Set(data *router.Route) error {
 			requests:  make(map[string]int32),
 			listeners: make(map[chan string]interface{}),
 		}
-		service.resumeCond = sync.NewCond(&service.pauseMtx)
+		service.resumeCond = sync.NewCond(service.pauseMtx.RLocker())
 		h.l.services[r.Service] = service
 	}
 	if listener, ok := h.l.listeners[r.Port]; ok {

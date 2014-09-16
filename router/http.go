@@ -227,7 +227,7 @@ func (h *httpSyncHandler) Set(data *router.Route) error {
 			listeners: make(map[chan string]interface{}),
 			paused:    false,
 		}
-		service.resumeCond = sync.NewCond(&service.pauseMtx)
+		service.resumeCond = sync.NewCond(service.pauseMtx.RLocker())
 		h.l.services[r.Service] = service
 	}
 	service.refs++

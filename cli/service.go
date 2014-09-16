@@ -49,11 +49,11 @@ func runPause(args *docopt.Args, client *controller.Client) error {
 			fmt.Println("errored in cli:", err)
 			return err
 		}
-		if string(line) == "all" {
+		if string(line) == "all\n" {
 			break
 		}
 	}
-	fmt.Sprintf("All backends drained! Run 'flynn unpause %s %s' when done.", args.String["<type>"], args.String["<service>"])
+	fmt.Printf("All backends drained! Run 'flynn unpause %s %s' when done.\n", args.String["<type>"], args.String["<service>"])
 	return nil
 }
 

@@ -69,23 +69,36 @@ func deleteRoute(route *router.Route, router routerc.Client, r ResponseHelper) {
 	r.WriteHeader(200)
 }
 
-func pauseService(router routerc.Client, pauseReq router.PauseReq, params martini.Params, r ResponseHelper, req *http.Request) {
-	fmt.Println("pause is", pauseReq.Pause)
-	err := router.PauseService(params["service_type"], params["service_name"], pauseReq.Pause)
+func pauseService(pauseReq router.PauseReq, params martini.Params, r ResponseHelper, req *http.Request) {
+	services, err := discoverd.Services("router-api", time.Second)
 	if err != nil {
 		r.Error(err)
 		return
 	}
+	var wg sync.WaitGroup
+	wg.Add(len(services))
+	fmt.Println("len services is", len(services))
+	for _, service := range services {
+		fmt.Println("for service")
+		go func() {
+			router := routerc.NewWithAddr(service.Addr)
+			if err := router.PauseService(params["service_type"], params["service_name"], pauseReq.Pause); err != nil {
+				r.Error(err)
+				return
+			}
+			wg.Done()
+		}()
+	}
+	wg.Wait()
 	r.WriteHeader(200)
 }
 
-func streamServiceDrain(req *http.Request, params martini.Params, router routerc.Client, r ResponseHelper, w http.ResponseWriter) {
+func streamServiceDrain(req *http.Request, params martini.Params, r ResponseHelper, w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "text/event-stream; charset=utf-8")
-	w.WriteHeader(200)
 	if wf, ok := w.(http.Flusher); ok {
 		wf.Flush()
 	}
-	services, err := discoverd.Services("router", time.Second)
+	services, err := discoverd.Services("router-api", time.Second)
 	if err != nil {
 		r.Error(err)
 		return
@@ -93,8 +106,9 @@ func streamServiceDrain(req *http.Request, params martini.Params, router routerc
 	var wg sync.WaitGroup
 	wg.Add(len(services))
 	for _, service := range services {
+		fmt.Println("for service")
 		go func() {
-			routerc.NewWithAddr(service.Addr)
+			router := routerc.NewWithAddr(service.Addr)
 			stream, err := router.StreamServiceDrain(params["service_type"], params["service_name"])
 			defer stream.Close()
 			if err != nil {
@@ -108,13 +122,23 @@ func streamServiceDrain(req *http.Request, params martini.Params, router routerc
 					fmt.Println(err)
 					return
 				}
-				if string(line) == "all" {
+				fmt.Printf("Received %#v", string(line))
+				if string(line) == "all\n" {
 					wg.Done()
+					fmt.Println("we're done")
 					break
 				}
 			}
 		}()
 	}
 	wg.Wait()
+	fmt.Println("nuff said")
 	// write "all" to client
+	w.WriteHeader(200)
+	if wf, ok := w.(http.Flusher); ok {
+		wf.Flush()
+	}
+	ssew := sse.NewSSEWriter(w)
+	ssew.Write([]byte("all"))
+	ssew.Flush()
 }

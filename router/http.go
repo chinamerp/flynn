@@ -159,7 +159,11 @@ func (s *HTTPListener) PauseService(name string, pause bool) error {
 	if !ok {
 		return nil
 	}
-	service.Pause()
+	if pause {
+		service.Pause()
+	} else {
+		service.Unpause()
+	}
 	return nil
 }
 

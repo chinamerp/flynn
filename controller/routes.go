@@ -134,10 +134,6 @@ func streamServiceDrain(req *http.Request, params martini.Params, r ResponseHelp
 	wg.Wait()
 	fmt.Println("nuff said")
 	// write "all" to client
-	w.WriteHeader(200)
-	if wf, ok := w.(http.Flusher); ok {
-		wf.Flush()
-	}
 	ssew := sse.NewSSEWriter(w)
 	ssew.Write([]byte("all"))
 	ssew.Flush()

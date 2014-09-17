@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -77,9 +76,7 @@ func pauseService(pauseReq router.PauseReq, params martini.Params, r ResponseHel
 	}
 	var wg sync.WaitGroup
 	wg.Add(len(services))
-	fmt.Println("len services is", len(services))
 	for _, service := range services {
-		fmt.Println("for service")
 		go func() {
 			router := routerc.NewWithAddr(service.Addr)
 			if err := router.PauseService(params["service_type"], params["service_name"], pauseReq.Pause); err != nil {
@@ -106,7 +103,6 @@ func streamServiceDrain(req *http.Request, params martini.Params, r ResponseHelp
 	var wg sync.WaitGroup
 	wg.Add(len(services))
 	for _, service := range services {
-		fmt.Println("for service")
 		go func() {
 			router := routerc.NewWithAddr(service.Addr)
 			stream, err := router.StreamServiceDrain(params["service_type"], params["service_name"])
@@ -119,20 +115,17 @@ func streamServiceDrain(req *http.Request, params martini.Params, r ResponseHelp
 			for {
 				line, err := dec.Read()
 				if err != nil {
-					fmt.Println(err)
+					r.Error(err)
 					return
 				}
-				fmt.Printf("Received %#v", string(line))
 				if string(line) == "all\n" {
 					wg.Done()
-					fmt.Println("we're done")
 					break
 				}
 			}
 		}()
 	}
 	wg.Wait()
-	fmt.Println("nuff said")
 	// write "all" to client
 	ssew := sse.NewSSEWriter(w)
 	ssew.Write([]byte("all"))

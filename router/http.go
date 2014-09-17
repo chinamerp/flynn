@@ -541,7 +541,7 @@ func (s *httpService) handle(req *http.Request, sc *httputil.ServerConn, tls, st
 	defer backend.Close()
 
 	s.requestMtx.Lock()
-	s.requests[addr]--
+	s.requests[addr]++
 	s.requestMtx.Unlock()
 
 	req.Proto = "HTTP/1.1"

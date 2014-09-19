@@ -27,11 +27,12 @@ type BootConfig struct {
 }
 
 type Cluster struct {
-	BackoffPeriod    time.Duration
-	ControllerDomain string
-	ControllerPin    string
-	ControllerKey    string
-	RouterIP         string
+	ID               string        `json:"id"`
+	BackoffPeriod    time.Duration `json:"backoff_period"`
+	ControllerDomain string        `json:"controller_domain"`
+	ControllerPin    string        `json:"controller_pin"`
+	ControllerKey    string        `json:"controller_key"`
+	RouterIP         string        `json:"router_ip"`
 
 	bc        BootConfig
 	vm        *VMManager
@@ -60,6 +61,7 @@ type Streams struct {
 
 func New(bc BootConfig, out io.Writer) *Cluster {
 	return &Cluster{
+		ID:  random.String(8),
 		bc:  bc,
 		out: out,
 	}
@@ -139,6 +141,13 @@ func (c *Cluster) Boot(rootFS string, count int) error {
 	}
 	c.rootFS = rootFS
 	return nil
+}
+
+func (c *Cluster) BridgeIP() string {
+	if c.bridge == nil {
+		return ""
+	}
+	return c.bridge.IP()
 }
 
 func (c *Cluster) AddHost() error {

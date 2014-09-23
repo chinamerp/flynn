@@ -106,6 +106,7 @@ func streamServiceDrain(req *http.Request, params martini.Params, r ResponseHelp
 	for _, service := range services {
 		go func() {
 			router := routerc.NewWithAddr(service.Addr)
+			defer func() { router.Close() }()
 			stream, err := router.StreamServiceDrain(params["service_type"], params["service_name"])
 			defer stream.Close()
 			if err != nil {

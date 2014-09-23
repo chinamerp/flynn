@@ -289,7 +289,7 @@ func (c *Client) DeleteRoute(appID string, routeID string) error {
 }
 
 func (c *Client) PauseService(t, name string, pause bool) error {
-	q := &router.PauseReq{Pause: pause}
+	q := &router.PauseReq{Paused: pause}
 	return c.put(fmt.Sprintf("/services/%s/%s", t, name), q, nil)
 }
 

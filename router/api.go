@@ -185,7 +185,7 @@ func pauseService(req *http.Request, pauseReq router.PauseReq, params martini.Pa
 		r.JSON(404, struct{}{})
 		return
 	}
-	err := l.PauseService(params["service_name"], pauseReq.Pause)
+	err := l.PauseService(params["service_name"], pauseReq.Paused)
 	if err == ErrNotFound {
 		r.JSON(404, struct{}{})
 		return

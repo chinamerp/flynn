@@ -79,7 +79,8 @@ func pauseService(pauseReq router.PauseReq, params martini.Params, r ResponseHel
 	for _, service := range services {
 		go func() {
 			router := routerc.NewWithAddr(service.Addr)
-			if err := router.PauseService(params["service_type"], params["service_name"], pauseReq.Pause); err != nil {
+			defer func() { router.Close() }()
+			if err := router.PauseService(params["service_type"], params["service_name"], pauseReq.Paused); err != nil {
 				r.Error(err)
 				return
 			}

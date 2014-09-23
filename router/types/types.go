@@ -92,5 +92,5 @@ type Event struct {
 }
 
 type PauseReq struct {
-	Pause bool `json:"pause"`
+	Paused bool `json:"paused"`
 }

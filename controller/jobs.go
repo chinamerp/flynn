@@ -348,11 +348,11 @@ type sseLogChunk struct {
 }
 
 func (w *sseLogStreamWriter) Write(p []byte) (int, error) {
-	str, err := json.Marshal(&sseLogChunk{Stream: w.s, Data: string(p)})
+	data, err := json.Marshal(&sseLogChunk{Stream: w.s, Data: string(p)})
 	if err != nil {
 		return 0, err
 	}
-	if _, err := w.w.Write(str); err != nil {
+	if _, err := w.w.Write(data); err != nil {
 		return 0, err
 	}
 	return len(p), err
